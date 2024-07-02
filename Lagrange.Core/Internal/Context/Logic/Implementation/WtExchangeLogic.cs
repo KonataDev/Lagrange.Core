@@ -420,16 +420,17 @@ internal class WtExchangeLogic : LogicBase
         {
             var resp = (StatusRegisterEvent)registerResponse[0];
             Collection.Log.LogInfo(Tag, $"Register Status: {resp.Message}");
-            Collection.Scheduler.Interval("SsoHeartBeat", (int)(4.5 * 60 * 1000), heartbeatDelegate);
-
-            var onlineEvent = new BotOnlineEvent(reason);
-            Collection.Invoker.PostEvent(onlineEvent);
-
-            await Collection.Business.PushEvent(InfoSyncEvent.Create());
 
             bool result = resp.Message.Contains("register success");
             if (result)
             {
+                Collection.Scheduler.Interval("SsoHeartBeat", (int)(4.5 * 60 * 1000), heartbeatDelegate);
+
+                var onlineEvent = new BotOnlineEvent(reason);
+                Collection.Invoker.PostEvent(onlineEvent);
+
+                await Collection.Business.PushEvent(InfoSyncEvent.Create());
+
                 _reLoginTimer.Change(TimeSpan.FromDays(15), TimeSpan.FromDays(15));
                 Collection.Log.LogInfo(Tag, "AutoReLogin Enabled, session would be refreshed in 15 days period");
             }

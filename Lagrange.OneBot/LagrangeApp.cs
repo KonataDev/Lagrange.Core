@@ -37,6 +37,8 @@ public class LagrangeApp : IHost
     public MessageService MessageService { get; set; }
     
     public OperationService OperationService { get; set; }
+
+    private bool _isFirstLogin;
     
     internal LagrangeApp(IHost host)
     {
@@ -46,6 +48,8 @@ public class LagrangeApp : IHost
         Services.GetRequiredService<MusicSigner>();
         MessageService = Services.GetRequiredService<MessageService>();
         OperationService = Services.GetRequiredService<OperationService>();
+
+        _isFirstLogin = true;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken = new())
@@ -70,7 +74,7 @@ public class LagrangeApp : IHost
 
         Instance.Invoker.OnBotOnlineEvent += async (_, args) =>
         {
-            if (args.Reason == BotOnlineEvent.OnlineReason.Reconnect) return;
+            if (args.Reason == BotOnlineEvent.OnlineReason.Reconnect && !_isFirstLogin) return;
             
             var keystore = Instance.UpdateKeystore();
             Logger.LogInformation($"Bot Online: {keystore.Uin}");
@@ -81,6 +85,8 @@ public class LagrangeApp : IHost
             Services.GetRequiredService<NotifyService>().RegisterEvents();
             
             await File.WriteAllTextAsync(Configuration["ConfigPath:Keystore"] ?? "keystore.json", json, cancellationToken);
+
+            _isFirstLogin = false;
         };
         
         if (string.IsNullOrEmpty(Configuration["Account:Password"]) &&
